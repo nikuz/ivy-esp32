@@ -72,6 +72,8 @@ public:
 
     static void println(double value);
 
+    static void notify(String value);
+
     static void checkConnect();
 
     static void sync();

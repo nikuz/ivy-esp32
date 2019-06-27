@@ -10,7 +10,7 @@
 #include "Relay.h"
 #include "AppSerial.h"
 #include "AppBlynk.h"
-//#include "Watering.h"
+#include "Watering.h"
 
 static const char *TAG = "ivy";
 AppTime timer;
@@ -35,8 +35,10 @@ const unsigned long screenRefreshInterval = 2UL * 1000UL; // refresh screen ever
 // watering
 const unsigned long wateringInterval = 5UL * 1000UL; // check every 5 seconds
 const unsigned long wateringProgressCheckInterval = 1UL * 1000UL;  // check every second
-int autoWatering = 0; // auto watering disabled by default
+int autoWatering = 0;   // auto watering disabled by default
+int manualWatering = 0; // manual watering disabled by default
 int wSoilMstrMin = 30;
+int wInterval = 5;
 String lastWatering = "";
 
 const unsigned long blynkSyncInterval = 2UL * 1000UL;  // sync blynk state every second
@@ -70,14 +72,17 @@ void setup() {
         ;
     }
 
+    pinMode(MEGA_RESET_PIN, OUTPUT);
+
     // initially off all the loads
-//    Relay::wateringCloseValve();
-//    Relay::wateringOff();
+    Relay::heatingOff();
+    Relay::wateringOff();
 
     // restore preferences
     AppStorage::setVariable(&otaHost, "otaHost");
     AppStorage::setVariable(&otaBin, "otaBin");
     AppStorage::setVariable(&wSoilMstrMin, "wSoilMstrMin");
+    AppStorage::setVariable(&wInterval, "wInterval");
     AppStorage::setVariable(&autoWatering, "autoWatering");
     AppStorage::setVariable(&lastWatering, "lastWatering");
     AppStorage::restore();
@@ -96,25 +101,31 @@ void setup() {
         AppSerial::sendFrame(&timeFrame);
     }
 
-//    Watering::setVariable(&autoWatering, "autoWatering");
-//    Watering::setVariable(&wSoilMstrMin, "wSoilMstrMin");
-//    Watering::setVariable(&lastWatering, "lastWatering");
+    Watering::setVariable(&autoWatering, "autoWatering");
+    Watering::setVariable(&wSoilMstrMin, "wSoilMstrMin");
+    Watering::setVariable(&wInterval, "wInterval");
+    Watering::setVariable(&lastWatering, "lastWatering");
+    Watering::setVariable(&manualWatering, "manualWatering");
 
     // register Blynk variables
     AppBlynk::setVariable(&otaHost, "otaHost");
     AppBlynk::setVariable(&otaBin, "otaBin");
     AppBlynk::setVariable(&wSoilMstrMin, "wSoilMstrMin");
+    AppBlynk::setVariable(&wInterval, "wInterval");
     AppBlynk::setVariable(&autoWatering, "autoWatering");
+    AppBlynk::setVariable(&manualWatering, "manualWatering");
 
     // start Blynk connection
     AppBlynk::initiate();
 
-//    timer.setInterval("watering", wateringInterval, Watering::check);
-//    timer.setInterval("wateringProgress", wateringProgressCheckInterval, Watering::checkProgress);
+    timer.setInterval("watering", wateringInterval, Watering::check);
+    timer.setInterval("wateringProgress", wateringProgressCheckInterval, Watering::checkProgress);
     timer.setInterval("screenRefresh", screenRefreshInterval, Screen::refresh);
-//    timer.setInterval("ota", otaCheckUpdateInterval, otaUpdateHandler);
+    timer.setInterval("ota", otaCheckUpdateInterval, otaUpdateHandler);
     timer.setInterval("blynkCheckConnect", blynkCheckConnectInterval, AppBlynk::checkConnect);
     timer.setInterval("blynkSync", blynkSyncInterval, AppBlynk::sync);
+
+    Tools::megaRestart();
 }
 
 void loop() {

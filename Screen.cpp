@@ -7,7 +7,7 @@
 #include "Tools.h"
 #include "Sensor.h"
 
-U8G2_SSD1327_WS_128X128_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
+U8G2_SSD1327_WS_128X128_F_4W_SW_SPI u8g2(U8G2_R0, 18, 23, 5, 19, U8X8_PIN_NONE);
 
 Screen::Screen() {}
 
@@ -68,12 +68,11 @@ void Screen::printLightIntensity(int lightIntensity) {
     }
     const int line = 40;
     u8g2.setFont(u8g2_font_crox2cb_tr);
-    const char *title = "Light: ";
-    const int titleWidth = u8g2.getStrWidth(title);
 
     const char *valueStr = Tools::intToChar(lightIntensity);
-    u8g2.drawStr(0, line, title);
-    u8g2.drawStr(titleWidth, line, valueStr);
+    u8g2.drawStr(0, line, valueStr);
+    const int valueWidth = u8g2.getStrWidth(valueStr);
+    u8g2.drawStr(valueWidth + u8g2.getStrWidth(" "), line, "lux");
 }
 
 void Screen::printSoilMoisture(int value1, int value2, int value3) {

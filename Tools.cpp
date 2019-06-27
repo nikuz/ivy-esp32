@@ -1,9 +1,10 @@
 #include <Arduino.h>
 
+#include "def.h"
 #include "Tools.h"
 #include "AppTime.h"
 
-static char megaUptimeString[6];
+static char megaUptimeString[10];
 
 Tools::Tools() {}
 
@@ -16,7 +17,7 @@ void Tools::parseSerialCommand(const char *command, const char *param) {
 }
 
 char *Tools::getUptime() {
-    static char uptimeString[5];
+    static char uptimeString[10];
     uint32_t overflowMillis = AppTime::getOverFlowCounter() * 4294968;
     const float uptime = (overflowMillis + millis()) / 1000.0L / 60.0L;
     dtostrf(uptime > 60 ? uptime / 60 : uptime, 3, 1, uptimeString);
@@ -40,16 +41,16 @@ char *Tools::getCharArray(char *args[], int len) {
 }
 
 char *Tools::intToChar(int value) {
-    static char result[5];
+    static char result[10];
     int strLength = 1;
-    if (value > 9) {
-        strLength = 2;
-    } else if (value > 99) {
-        strLength = 3;
+    if (value > 9999) {
+        strLength = 5;
     } else if (value > 999) {
         strLength = 4;
-    } else if (value > 9999) {
-        strLength = 5;
+    } else if (value > 99) {
+        strLength = 3;
+    } else if (value > 9) {
+        strLength = 2;
     }
     dtostrf(value, strLength, 0, result);
 
@@ -80,7 +81,11 @@ bool Tools::millisOverflowIsClose() {
 }
 
 char *Tools::getMegaUptime() {
-    Serial.print("getMegaUptime: ");
-    Serial.println(megaUptimeString);
     return megaUptimeString;
+}
+
+void Tools::megaRestart() {
+    digitalWrite(MEGA_RESET_PIN, LOW);
+    delay(10);
+    digitalWrite(MEGA_RESET_PIN, HIGH);
 }

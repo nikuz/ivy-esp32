@@ -21,7 +21,7 @@
 #include "Sensor.h"
 #include "Relay.h"
 #include "AppTime.h"
-//#include "Watering.h"
+#include "Watering.h"
 
 // Blynk virtual pins
 const int pinTemperature = V0;
@@ -42,12 +42,14 @@ const int pinSoilTemperature2 = V3;
 const int pinSoilTemperature3 = V4;
 const int pinWSoilMstrMin = V23;
 const int pinAutoWatering = V29;
+const int pinManualWatering = V38;
 const int pinWatering = V24;
 const int pinLastWatering = V33;
+const int pinWateringInterval = V26;
 const int pinMegaUptime = V34;
 
 // cache
-int fishIntCache = -1;
+int fishIntCache = -32000;
 int temperatureCache = 0;
 int humidityCache = 0;
 int lightIntensityCache = 0;
@@ -60,8 +62,6 @@ int soilMoistureCache3 = 0;
 int soilTemperatureCache1 = 0;
 int soilTemperatureCache2 = 0;
 int soilTemperatureCache3 = 0;
-int wSoilMstrMinCache = 0;
-int autoWateringCache = 0;
 int wateringCache = 0;
 String fishStringCache = "fish";
 String otaHostCache = "";
@@ -69,6 +69,7 @@ String otaBinCache = "";
 String otaLastUpdateTimeCache = "";
 String uptimeCache = "";
 String lastWateringCache = "";
+String megaUptimeCache = "";
 
 const unsigned long blynkConnectAttemptTime = 5UL * 1000UL;  // try to connect to blynk server only 5 seconds
 bool blynkConnectAttemptFirstTime = true;
@@ -124,8 +125,10 @@ int AppBlynk::getPinById(const char *pinId) {
     if (strcmp(pinId, "soilTemperature3") == 0) return pinSoilTemperature3;
     if (strcmp(pinId, "wSoilMstrMin") == 0) return pinWSoilMstrMin;
     if (strcmp(pinId, "autoWatering") == 0) return pinAutoWatering;
+    if (strcmp(pinId, "manualWatering") == 0) return pinManualWatering;
     if (strcmp(pinId, "watering") == 0) return pinWatering;
     if (strcmp(pinId, "lastWatering") == 0) return pinLastWatering;
+    if (strcmp(pinId, "wInterval") == 0) return pinWateringInterval;
     if (strcmp(pinId, "megaUptime") == 0) return pinMegaUptime;
 
     return -1;
@@ -144,8 +147,6 @@ int &AppBlynk::getIntCacheValue(const char *pinId) {
     if (strcmp(pinId, "soilTemperature1") == 0) return soilTemperatureCache1;
     if (strcmp(pinId, "soilTemperature2") == 0) return soilTemperatureCache2;
     if (strcmp(pinId, "soilTemperature3") == 0) return soilTemperatureCache3;
-    if (strcmp(pinId, "wSoilMstrMin") == 0) return wSoilMstrMinCache;
-    if (strcmp(pinId, "autoWatering") == 0) return autoWateringCache;
     if (strcmp(pinId, "watering") == 0) return wateringCache;
 
     return fishIntCache;
@@ -156,6 +157,7 @@ String &AppBlynk::getStringCacheValue(const char *pinId) {
     if (strcmp(pinId, "otaBin") == 0) return otaBinCache;
     if (strcmp(pinId, "otaLastUpdateTime") == 0) return otaLastUpdateTimeCache;
     if (strcmp(pinId, "uptime") == 0) return uptimeCache;
+    if (strcmp(pinId, "megaUptime") == 0) return megaUptimeCache;
     if (strcmp(pinId, "lastWatering") == 0) return lastWateringCache;
 
     return fishStringCache;
@@ -259,14 +261,14 @@ void AppBlynk::sync() { // every second
                 AppBlynk::postData(pin, Sensor::getSoilTemperature(SOIL_SENSOR_3));
             };
             if (strcmp(pin, "watering") == 0) {
-                AppBlynk::postData(pin, Relay::isWateringOn() ? 255 : 0);
+                AppBlynk::postData(pin, Relay::isWateringEnabled() ? 255 : 0);
             };
             if (strcmp(pin, "lightIntensity") == 0) {
                 AppBlynk::postData(pin, Sensor::getLightIntensity());
             };
-//            if (strcmp(pin, "lastWatering") == 0) {
-//                AppBlynk::postData(pin, Watering::getStringVariable(pin));
-//            };
+            if (strcmp(pin, "lastWatering") == 0) {
+                AppBlynk::postData(pin, Watering::getStringVariable(pin));
+            };
             if (strcmp(pin, "megaUptime") == 0) {
                 AppBlynk::postData(pin, String(Tools::getMegaUptime()));
             };
@@ -305,12 +307,22 @@ BLYNK_WRITE(V21) { // otaBin
 BLYNK_WRITE(V23) { // wSoilMstrMin
     writeHandler("wSoilMstrMin", param.asInt(), true);
 };
+BLYNK_WRITE(V26) { // wInterval
+    writeHandler("wInterval", param.asInt(), true);
+};
 BLYNK_WRITE(V29) { // autoWatering
     int value = param.asInt();
     if (value == 0) {
-//        Watering::stop();
+        Watering::stop();
     }
     writeHandler("autoWatering", value, true);
+};
+BLYNK_WRITE(V38) { // manualWatering
+    int value = param.asInt();
+    if (value == 0) {
+        Watering::stop();
+    }
+    writeHandler("manualWatering", value, false);
 };
 BLYNK_WRITE(V10) { // ping
     if (param.asInt() == 1) {
@@ -329,6 +341,13 @@ BLYNK_WRITE(V31) { // restart
         Blynk.virtualWrite(V31, 0);
         delay(2000);
         ESP.restart();
+    }
+};
+BLYNK_WRITE(V35) { // mega restart
+    if (param.asInt() == 1) {
+        Blynk.virtualWrite(V35, 0);
+        delay(2000);
+        Tools::megaRestart();
     }
 };
 
@@ -430,11 +449,13 @@ void AppBlynk::postData(const char *pinId, int value) {
         return;
     }
     int &cacheValue = AppBlynk::getIntCacheValue(pinId);
-    if (cacheValue != -1 || cacheValue != value) { // post data also if cache not applied for pin
+    if (cacheValue != -32000 || cacheValue != value) { // post data also if cache not applied for pin
         if (Blynk.connected()) {
             Blynk.virtualWrite(blynkPin, value);
         }
-        cacheValue = value;
+        if (cacheValue != -32000) {
+            cacheValue = value;
+        }
     }
 }
 
@@ -448,7 +469,9 @@ void AppBlynk::postData(const char *pinId, String value) {
         if (Blynk.connected()) {
             Blynk.virtualWrite(blynkPin, value);
         }
-        cacheValue = value;
+        if (cacheValue != "fish") {
+            cacheValue = value;
+        }
     }
 }
 
@@ -529,5 +552,11 @@ void AppBlynk::println(double value) {
     if (AppWiFi::isConnected() && Blynk.connected() && !Tools::millisOverflowIsClose()) {
         blynkTerminal.println(value);
         blynkTerminal.flush();
+    }
+}
+
+void AppBlynk::notify(String value) {
+    if (AppWiFi::isConnected() && Blynk.connected() && !Tools::millisOverflowIsClose()) {
+        Blynk.notify(value);
     }
 }

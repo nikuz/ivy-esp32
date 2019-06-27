@@ -9,9 +9,11 @@
 const char relayOnSerialCommand[] = "rOn";
 const char relayOffSerialCommand[] = "rOf";
 
+// heating
+bool heatingEnabled = false;
+
 // watering
 bool wateringEnabled = false;
-bool wateringOpenedValve = false;
 
 Relay::Relay() {}
 
@@ -20,33 +22,51 @@ Relay::~Relay() {}
 void Relay::parseSerialCommand(const char *command, const char *param) {
     if (strcmp(command, "rOn") == 0) {
         if (strcmp(param, "valve") == 0) {
-            wateringOpenedValve = true;
-            DEBUG_PRINTLN("Open valve s1.");
+            wateringEnabled = true;
+            DEBUG_PRINTLN("Valve opened.");
+        }
+        if (strcmp(param, "heat") == 0) {
+            heatingEnabled = true;
+            DEBUG_PRINTLN("Heat enabled.");
         }
     } else if (strcmp(command, "rOf") == 0) {
         if (strcmp(param, "valve") == 0) {
-            wateringOpenedValve = false;
-            DEBUG_PRINTLN("Close valve s1.");
+            wateringEnabled = false;
+            DEBUG_PRINTLN("Valve closed.");
+        }
+        if (strcmp(param, "heat") == 0) {
+            heatingEnabled = true;
+            DEBUG_PRINTLN("Heat disabled.");
         }
     }
 }
 
+bool Relay::isHeatingEnabled() {
+    return heatingEnabled;
+}
+
+void Relay::heatingOn() {
+    SerialFrame heatingFrame = SerialFrame(relayOnSerialCommand, "heat");
+    AppSerial::sendFrame(&heatingFrame);
+}
+
+void Relay::heatingOff() {
+    SerialFrame heatingFrame = SerialFrame(relayOffSerialCommand, "heat");
+    AppSerial::sendFrame(&heatingFrame);
+}
+
 // watering
 
-bool Relay::isWateringOn() {
+bool Relay::isWateringEnabled() {
     return wateringEnabled;
 }
 
-bool Relay::wateringValveIsOpen() {
-    return wateringOpenedValve;
-}
-
-void Relay::wateringOpenValve() {
-    SerialFrame openValveFrame = SerialFrame(relayOnSerialCommand, "1");
+void Relay::wateringOn() {
+    SerialFrame openValveFrame = SerialFrame(relayOnSerialCommand, "valve");
     AppSerial::sendFrame(&openValveFrame);
 }
 
-void Relay::wateringCloseValve() {
-    SerialFrame closeValveFrame = SerialFrame(relayOffSerialCommand, "1");
+void Relay::wateringOff() {
+    SerialFrame closeValveFrame = SerialFrame(relayOffSerialCommand, "valve");
     AppSerial::sendFrame(&closeValveFrame);
 }

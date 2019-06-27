@@ -11,14 +11,21 @@ public:
 
     static void parseSerialCommand(const char *command, const char *param);
 
+    // heating
+
+    static bool isHeatingEnabled();
+
+    static void heatingOn();
+
+    static void heatingOff();
+
     // watering
-    static bool isWateringOn();
 
-    static bool wateringValveIsOpen();
+    static bool isWateringEnabled();
 
-    static void wateringOpenValve();
+    static void wateringOn();
 
-    static void wateringCloseValve();
+    static void wateringOff();
 };
 
 #endif /* Relay_h */

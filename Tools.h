@@ -22,6 +22,8 @@ public:
     static bool millisOverflowIsClose();
 
     static char *getMegaUptime();
+
+    static void megaRestart();
 };
 
 #endif /* Tools_h */

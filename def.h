@@ -1,8 +1,8 @@
-//#define PRODUCTION 1    // production
-#define PRODUCTION 0    // development
+#define PRODUCTION 1    // production
+//#define PRODUCTION 0    // development
 //#define DEBUG 1
 
-#define VERSION_ID "3"
+#define VERSION_ID "5"
 
 #if PRODUCTION
 #define VERSION_MARKER "P"
@@ -32,3 +32,5 @@
 #define SOIL_SENSOR_3 3
 #define SOIL_SENSOR_3_MIN 163
 #define SOIL_SENSOR_3_MAX 680
+
+#define MEGA_RESET_PIN 15
