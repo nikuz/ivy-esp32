@@ -16,7 +16,7 @@ static String blankStringVariable = "";
 
 bool wateringStarted = false;
 struct tm wateringStartedAt = {0};
-const int wateringTime = 30;                    // 30 sec
+const int wateringDuration = 30;                    // 30 sec
 bool wateringPassed = false;
 
 bool valveIsOpen = false;
@@ -100,9 +100,8 @@ void stopping() {
 void valve() {
     if (
         valveIsOpen
-        && AppTime::compareDates(wateringStartedAt, AppTime::getCurrentTime()) >= wateringTime
+        && AppTime::compareDates(wateringStartedAt, AppTime::getCurrentTime()) >= wateringDuration
     ) {
-        Relay::wateringOff();
         AppBlynk::println("Stop watering");
         wateringPassed = true;
         return;
@@ -131,6 +130,9 @@ void soilMoisture() {
     if (!wateringStarted) {
         String &lastWateringTime = Watering::getStringVariable("lastWatering");
         double lastWateringSec = AppTime::compareDates(lastWateringTime, AppTime::getCurrentTime());
+        if (lastWateringTime == "") {
+            lastWateringSec = getWateringInterval();
+        }
         if (lastWateringSec < 0) {
             lastWateringSec = 0;
         }

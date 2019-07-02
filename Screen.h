@@ -3,11 +3,24 @@
 
 #include <Arduino.h>
 
+struct ScreenIntVariable {
+    int *var;
+    const char *key;
+
+    ScreenIntVariable() {}
+
+    ScreenIntVariable(int *_var, const char *_key) : var(_var), key(_key) {}
+};
+
 class Screen {
 public:
     Screen();
 
     ~Screen();
+
+    static void setVariable(int *var, const char *key);
+
+    static int &getIntVariable(const char *key);
 
     static void initiate();
 

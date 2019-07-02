@@ -31,6 +31,7 @@ EspOta otaUpdate(otaHost, otaPort, otaBin, TAG);
 const unsigned long otaCheckUpdateInterval = 60UL * 1000UL;  // check OTA update every minute
 
 const unsigned long screenRefreshInterval = 2UL * 1000UL; // refresh screen every 2 seconds
+int screenEnabled = 1;
 
 // watering
 const unsigned long wateringInterval = 5UL * 1000UL; // check every 5 seconds
@@ -58,6 +59,7 @@ void otaUpdateHandler() {
 
 void setup() {
     // initiate screen first to show loading state
+    Screen::setVariable(&screenEnabled, "screenEnabled");
     Screen::initiate();
 
     // Begin debug Serial
@@ -81,6 +83,7 @@ void setup() {
     // restore preferences
     AppStorage::setVariable(&otaHost, "otaHost");
     AppStorage::setVariable(&otaBin, "otaBin");
+    AppStorage::setVariable(&screenEnabled, "screenEnabled");
     AppStorage::setVariable(&wSoilMstrMin, "wSoilMstrMin");
     AppStorage::setVariable(&wInterval, "wInterval");
     AppStorage::setVariable(&autoWatering, "autoWatering");
@@ -110,6 +113,7 @@ void setup() {
     // register Blynk variables
     AppBlynk::setVariable(&otaHost, "otaHost");
     AppBlynk::setVariable(&otaBin, "otaBin");
+    AppBlynk::setVariable(&screenEnabled, "screenEnabled");
     AppBlynk::setVariable(&wSoilMstrMin, "wSoilMstrMin");
     AppBlynk::setVariable(&wInterval, "wInterval");
     AppBlynk::setVariable(&autoWatering, "autoWatering");

@@ -9,9 +9,33 @@
 
 U8G2_SSD1327_WS_128X128_F_4W_SW_SPI u8g2(U8G2_R0, 18, 23, 5, 19, U8X8_PIN_NONE);
 
+static ScreenIntVariable intVariables[10];
+static int blankIntVariable = -1;
+
 Screen::Screen() {}
 
 Screen::~Screen() {}
+
+void Screen::setVariable(int *var, const char *key) {
+    int varsLen = *(&intVariables + 1) - intVariables;
+    for (int i = 0; i < varsLen; i++) {
+        if (!intVariables[i].key) {
+            intVariables[i] = ScreenIntVariable(var, key);
+            break;
+        }
+    }
+}
+
+int &Screen::getIntVariable(const char *key) {
+    const int varsLen = *(&intVariables + 1) - intVariables;
+    for (int i = 0; i < varsLen; i++) {
+        if (intVariables[i].key == key) {
+            return *intVariables[i].var;
+        }
+    }
+
+    return blankIntVariable;
+}
 
 void Screen::initiate() {
     u8g2.begin();
@@ -164,20 +188,24 @@ void Screen::printUptime() {
 
 void Screen::refresh() {
     clearBuffer();
-    printTemperature(Sensor::temperatureGet(), Sensor::humidityGet());
-    printLightIntensity(Sensor::getLightIntensity());
-    printSoilMoisture(
-        Sensor::getSoilMoisture(SOIL_SENSOR_1),
-        Sensor::getSoilMoisture(SOIL_SENSOR_2),
-        Sensor::getSoilMoisture(SOIL_SENSOR_3)
-    );
-    printSoilTemperature(
-        Sensor::getSoilTemperature(SOIL_SENSOR_1),
-        Sensor::getSoilTemperature(SOIL_SENSOR_2),
-        Sensor::getSoilTemperature(SOIL_SENSOR_3)
-    );
-    printAppVersion();
-    printUptime();
+    int screenEnabled = Screen::getIntVariable("screenEnabled");
+
+    if (screenEnabled == 1) {
+        printTemperature(Sensor::temperatureGet(), Sensor::humidityGet());
+        printLightIntensity(Sensor::getLightIntensity());
+        printSoilMoisture(
+            Sensor::getSoilMoisture(SOIL_SENSOR_1),
+            Sensor::getSoilMoisture(SOIL_SENSOR_2),
+            Sensor::getSoilMoisture(SOIL_SENSOR_3)
+        );
+        printSoilTemperature(
+            Sensor::getSoilTemperature(SOIL_SENSOR_1),
+            Sensor::getSoilTemperature(SOIL_SENSOR_2),
+            Sensor::getSoilTemperature(SOIL_SENSOR_3)
+        );
+        printAppVersion();
+        printUptime();
+    }
 
     sendBuffer();
 }

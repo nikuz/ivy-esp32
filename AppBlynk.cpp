@@ -47,6 +47,7 @@ const int pinWatering = V24;
 const int pinLastWatering = V33;
 const int pinWateringInterval = V26;
 const int pinMegaUptime = V34;
+const int pinScreenEnabled = V15;
 
 // cache
 int fishIntCache = -32000;
@@ -130,6 +131,7 @@ int AppBlynk::getPinById(const char *pinId) {
     if (strcmp(pinId, "lastWatering") == 0) return pinLastWatering;
     if (strcmp(pinId, "wInterval") == 0) return pinWateringInterval;
     if (strcmp(pinId, "megaUptime") == 0) return pinMegaUptime;
+    if (strcmp(pinId, "screenEnabled") == 0) return pinScreenEnabled;
 
     return -1;
 }
@@ -303,6 +305,9 @@ BLYNK_WRITE(V20) { // otaHost
 };
 BLYNK_WRITE(V21) { // otaBin
     writeHandler("otaBin", param.asStr(), true);
+};
+BLYNK_WRITE(V15) { // screenEnabled
+    writeHandler("screenEnabled", param.asInt(), true);
 };
 BLYNK_WRITE(V23) { // wSoilMstrMin
     writeHandler("wSoilMstrMin", param.asInt(), true);
