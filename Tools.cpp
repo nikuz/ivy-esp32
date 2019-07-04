@@ -4,7 +4,7 @@
 #include "Tools.h"
 #include "AppTime.h"
 
-static char megaUptimeString[10];
+static char megaUptimeString[10] = "0.0m";
 
 Tools::Tools() {}
 
@@ -86,6 +86,6 @@ char *Tools::getMegaUptime() {
 
 void Tools::megaRestart() {
     digitalWrite(MEGA_RESET_PIN, LOW);
-    delay(10);
+    delay(100);
     digitalWrite(MEGA_RESET_PIN, HIGH);
 }

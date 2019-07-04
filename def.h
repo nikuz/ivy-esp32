@@ -2,7 +2,7 @@
 //#define PRODUCTION 0    // development
 //#define DEBUG 1
 
-#define VERSION_ID "6"
+#define VERSION_ID "7"
 
 #if PRODUCTION
 #define VERSION_MARKER "P"

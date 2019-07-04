@@ -350,9 +350,8 @@ BLYNK_WRITE(V31) { // restart
 };
 BLYNK_WRITE(V35) { // mega restart
     if (param.asInt() == 1) {
-        Blynk.virtualWrite(V35, 0);
-        delay(2000);
         Tools::megaRestart();
+        Blynk.virtualWrite(V35, 0);
     }
 };
 

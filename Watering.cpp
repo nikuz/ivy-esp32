@@ -137,7 +137,8 @@ void soilMoisture() {
             lastWateringSec = 0;
         }
 
-        potSoilMoisture = Sensor::getSoilMoisture(SOIL_SENSOR_2);
+        potSoilMoisture = max(Sensor::getSoilMoisture(SOIL_SENSOR_1), Sensor::getSoilMoisture(SOIL_SENSOR_2));
+        potSoilMoisture = max(potSoilMoisture, Sensor::getSoilMoisture(SOIL_SENSOR_3));
         if (potSoilMoisture < wSoilMstrMin) {
             if (isWateringEnabled()) {
                 if (lastWateringSec >= wateringInterval) {
