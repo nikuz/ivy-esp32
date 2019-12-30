@@ -1,8 +1,8 @@
 #define PRODUCTION 1    // production
 //#define PRODUCTION 0    // development
-//#define DEBUG 1
+#define DEBUG 0
 
-#define VERSION_ID "7"
+#define VERSION_ID "11"
 
 #if PRODUCTION
 #define VERSION_MARKER "P"
@@ -22,15 +22,15 @@
 
 // sensors
 #define SOIL_SENSOR_1 1
-#define SOIL_SENSOR_1_MIN 168
-#define SOIL_SENSOR_1_MAX 630
+#define SOIL_SENSOR_1_MIN 170
+#define SOIL_SENSOR_1_MAX 619
 
 #define SOIL_SENSOR_2 2
 #define SOIL_SENSOR_2_MIN 160
-#define SOIL_SENSOR_2_MAX 670
+#define SOIL_SENSOR_2_MAX 623
 
 #define SOIL_SENSOR_3 3
-#define SOIL_SENSOR_3_MIN 163
-#define SOIL_SENSOR_3_MAX 680
+#define SOIL_SENSOR_3_MIN 176
+#define SOIL_SENSOR_3_MAX 589
 
 #define MEGA_RESET_PIN 15

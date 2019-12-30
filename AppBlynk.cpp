@@ -22,6 +22,7 @@
 #include "Relay.h"
 #include "AppTime.h"
 #include "Watering.h"
+#include "Heating.h"
 
 // Blynk virtual pins
 const int pinTemperature = V0;
@@ -48,6 +49,10 @@ const int pinLastWatering = V33;
 const int pinWateringInterval = V26;
 const int pinMegaUptime = V34;
 const int pinScreenEnabled = V15;
+const int pinAutoHeating = V40;
+const int pinHSoilTmpMin = V41;
+const int pinHSoilTmpMax = V42;
+const int pinLastHeating = V43;
 
 // cache
 int fishIntCache = -32000;
@@ -71,6 +76,7 @@ String otaLastUpdateTimeCache = "";
 String uptimeCache = "";
 String lastWateringCache = "";
 String megaUptimeCache = "";
+String lastHeatingCache = "";
 
 const unsigned long blynkConnectAttemptTime = 5UL * 1000UL;  // try to connect to blynk server only 5 seconds
 bool blynkConnectAttemptFirstTime = true;
@@ -98,6 +104,7 @@ static BlynkSyncVariable syncVariables[] = {
     {"lightIntensity",    false},
     {"lastWatering",      false},
     {"megaUptime",        false},
+    {"lastHeating",      false},
 };
 const int syncValuesPerSecond = 5;
 
@@ -132,6 +139,10 @@ int AppBlynk::getPinById(const char *pinId) {
     if (strcmp(pinId, "wInterval") == 0) return pinWateringInterval;
     if (strcmp(pinId, "megaUptime") == 0) return pinMegaUptime;
     if (strcmp(pinId, "screenEnabled") == 0) return pinScreenEnabled;
+    if (strcmp(pinId, "autoHeating") == 0) return pinAutoHeating;
+    if (strcmp(pinId, "hSoilTmpMin") == 0) return pinHSoilTmpMin;
+    if (strcmp(pinId, "hSoilTmpMax") == 0) return pinHSoilTmpMax;
+    if (strcmp(pinId, "lastHeating") == 0) return pinLastHeating;
 
     return -1;
 }
@@ -161,6 +172,7 @@ String &AppBlynk::getStringCacheValue(const char *pinId) {
     if (strcmp(pinId, "uptime") == 0) return uptimeCache;
     if (strcmp(pinId, "megaUptime") == 0) return megaUptimeCache;
     if (strcmp(pinId, "lastWatering") == 0) return lastWateringCache;
+    if (strcmp(pinId, "lastHeating") == 0) return lastHeatingCache;
 
     return fishStringCache;
 }
@@ -274,6 +286,12 @@ void AppBlynk::sync() { // every second
             if (strcmp(pin, "megaUptime") == 0) {
                 AppBlynk::postData(pin, String(Tools::getMegaUptime()));
             };
+            if (strcmp(pin, "megaUptime") == 0) {
+                AppBlynk::postData(pin, String(Tools::getMegaUptime()));
+            };
+            if (strcmp(pin, "lastHeating") == 0) {
+                AppBlynk::postData(pin, Heating::getStringVariable(pin));
+            };
             syncVariables[i].synced = true;
             syncCounter++;
         }
@@ -329,6 +347,19 @@ BLYNK_WRITE(V38) { // manualWatering
     }
     writeHandler("manualWatering", value, false);
 };
+BLYNK_WRITE(V40) { // autoHeating
+    int value = param.asInt();
+    if (value == 0) {
+        Heating::stop();
+    }
+    writeHandler("autoHeating", value, true);
+};
+BLYNK_WRITE(V41) { // hSoilTmpMin
+    writeHandler("hSoilTmpMin", param.asInt(), true);
+};
+BLYNK_WRITE(V42) { // hSoilTmpMax
+    writeHandler("hSoilTmpMax", param.asInt(), true);
+};
 BLYNK_WRITE(V10) { // ping
     if (param.asInt() == 1) {
         Blynk.notify("PONG");
@@ -350,8 +381,9 @@ BLYNK_WRITE(V31) { // restart
 };
 BLYNK_WRITE(V35) { // mega restart
     if (param.asInt() == 1) {
-        Tools::megaRestart();
         Blynk.virtualWrite(V35, 0);
+        Tools::megaRestart();
+        delay(2000);
     }
 };
 

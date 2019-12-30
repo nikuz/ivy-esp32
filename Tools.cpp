@@ -86,6 +86,6 @@ char *Tools::getMegaUptime() {
 
 void Tools::megaRestart() {
     digitalWrite(MEGA_RESET_PIN, LOW);
-    delay(100);
+    delay(10);
     digitalWrite(MEGA_RESET_PIN, HIGH);
 }

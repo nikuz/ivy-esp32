@@ -11,6 +11,7 @@
 #include "AppSerial.h"
 #include "AppBlynk.h"
 #include "Watering.h"
+#include "Heating.h"
 
 static const char *TAG = "ivy";
 AppTime timer;
@@ -41,6 +42,13 @@ int manualWatering = 0; // manual watering disabled by default
 int wSoilMstrMin = 30;
 int wInterval = 5;
 String lastWatering = "";
+
+// heating
+const unsigned long heatingInterval = 5UL * 1000UL; // check every 5 seconds
+int autoHeating = 0;   // auto heating disabled by default
+int hSoilTmpMin = 2;
+int hSoilTmpMax = 5;
+String lastHeating = "";
 
 const unsigned long blynkSyncInterval = 2UL * 1000UL;  // sync blynk state every second
 const unsigned long blynkCheckConnectInterval = 30UL * 1000UL;  // check blynk connection every 30 seconds
@@ -110,6 +118,11 @@ void setup() {
     Watering::setVariable(&lastWatering, "lastWatering");
     Watering::setVariable(&manualWatering, "manualWatering");
 
+    Heating::setVariable(&autoHeating, "autoHeating");
+    Heating::setVariable(&hSoilTmpMin, "hSoilTmpMin");
+    Heating::setVariable(&hSoilTmpMax, "hSoilTmpMax");
+    Heating::setVariable(&lastHeating, "lastHeating");
+
     // register Blynk variables
     AppBlynk::setVariable(&otaHost, "otaHost");
     AppBlynk::setVariable(&otaBin, "otaBin");
@@ -118,12 +131,16 @@ void setup() {
     AppBlynk::setVariable(&wInterval, "wInterval");
     AppBlynk::setVariable(&autoWatering, "autoWatering");
     AppBlynk::setVariable(&manualWatering, "manualWatering");
+    AppBlynk::setVariable(&autoHeating, "autoHeating");
+    AppBlynk::setVariable(&hSoilTmpMin, "hSoilTmpMin");
+    AppBlynk::setVariable(&hSoilTmpMax, "hSoilTmpMax");
 
     // start Blynk connection
     AppBlynk::initiate();
 
     timer.setInterval("watering", wateringInterval, Watering::check);
     timer.setInterval("wateringProgress", wateringProgressCheckInterval, Watering::checkProgress);
+    timer.setInterval("heating", heatingInterval, Heating::check);
     timer.setInterval("screenRefresh", screenRefreshInterval, Screen::refresh);
     timer.setInterval("ota", otaCheckUpdateInterval, otaUpdateHandler);
     timer.setInterval("blynkCheckConnect", blynkCheckConnectInterval, AppBlynk::checkConnect);
