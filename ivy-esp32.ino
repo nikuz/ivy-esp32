@@ -34,6 +34,12 @@ const unsigned long otaCheckUpdateInterval = 60UL * 1000UL;  // check OTA update
 const unsigned long screenRefreshInterval = 2UL * 1000UL; // refresh screen every 2 seconds
 int screenEnabled = 1;
 
+// light settings
+const unsigned long hourCheckInterval = 1UL * 1000UL;  // check current hour every second
+int lightDayStart = 6;  // 06:00
+int lightDayEnd = 20;   // 20:00
+int lightConnected = 0;
+
 // watering
 const unsigned long wateringInterval = 5UL * 1000UL; // check every 5 seconds
 const unsigned long wateringProgressCheckInterval = 1UL * 1000UL;  // check every second
@@ -65,6 +71,20 @@ void otaUpdateHandler() {
     otaUpdate.begin(AppTime::getTimeString(AppTime::getCurrentTime()));
 }
 
+void hourCheck() {
+    const int currentHour = AppTime::getCurrentHour();
+    if (currentHour == -1 || lightConnected == 0) {
+        return;
+    }
+
+    // because we don't have a separated relay for the light, we use the heating relay
+    if (AppTime::lightDayDiapasonMatch(currentHour)) {
+        Relay::heatingOn();
+    } else {
+        Relay::heatingOff();
+    }
+}
+
 void setup() {
     // initiate screen first to show loading state
     Screen::setVariable(&screenEnabled, "screenEnabled");
@@ -89,6 +109,8 @@ void setup() {
     Relay::wateringOff();
 
     // restore preferences
+    AppStorage::setVariable(&lightDayStart, "lightDayStart");
+    AppStorage::setVariable(&lightDayEnd, "lightDayEnd");
     AppStorage::setVariable(&otaHost, "otaHost");
     AppStorage::setVariable(&otaBin, "otaBin");
     AppStorage::setVariable(&screenEnabled, "screenEnabled");
@@ -102,6 +124,8 @@ void setup() {
     AppWiFi::connect();
 
     //get internet time
+    AppTime::setVariable(&lightDayStart, "lightDayStart");
+    AppTime::setVariable(&lightDayEnd, "lightDayEnd");
     AppTime::obtainSNTP();
 
     // update RTC time on Mega by internet time
@@ -124,6 +148,9 @@ void setup() {
     Heating::setVariable(&lastHeating, "lastHeating");
 
     // register Blynk variables
+    AppBlynk::setVariable(&lightDayStart, "lightDayStart");
+    AppBlynk::setVariable(&lightDayEnd, "lightDayEnd");
+    AppBlynk::setVariable(&lightConnected, "lightConnected");
     AppBlynk::setVariable(&otaHost, "otaHost");
     AppBlynk::setVariable(&otaBin, "otaBin");
     AppBlynk::setVariable(&screenEnabled, "screenEnabled");
@@ -138,6 +165,7 @@ void setup() {
     // start Blynk connection
     AppBlynk::initiate();
 
+    timer.setInterval("hourCheck", hourCheckInterval, hourCheck);
     timer.setInterval("watering", wateringInterval, Watering::check);
     timer.setInterval("wateringProgress", wateringProgressCheckInterval, Watering::checkProgress);
     timer.setInterval("heating", heatingInterval, Heating::check);

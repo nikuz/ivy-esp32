@@ -53,6 +53,9 @@ const int pinAutoHeating = V40;
 const int pinHSoilTmpMin = V41;
 const int pinHSoilTmpMax = V42;
 const int pinLastHeating = V43;
+const int pinLightDayStart = V6;
+const int pinLightDayEnd = V7;
+const int pinLightConnected = V8;
 
 // cache
 int fishIntCache = -32000;
@@ -104,7 +107,7 @@ static BlynkSyncVariable syncVariables[] = {
     {"lightIntensity",    false},
     {"lastWatering",      false},
     {"megaUptime",        false},
-    {"lastHeating",      false},
+    {"lastHeating",       false},
 };
 const int syncValuesPerSecond = 5;
 
@@ -143,6 +146,9 @@ int AppBlynk::getPinById(const char *pinId) {
     if (strcmp(pinId, "hSoilTmpMin") == 0) return pinHSoilTmpMin;
     if (strcmp(pinId, "hSoilTmpMax") == 0) return pinHSoilTmpMax;
     if (strcmp(pinId, "lastHeating") == 0) return pinLastHeating;
+    if (strcmp(pinId, "lightDayStart") == 0) return pinLightDayStart;
+    if (strcmp(pinId, "lightDayEnd") == 0) return pinLightDayEnd;
+    if (strcmp(pinId, "lightConnected") == 0) return pinLightConnected;
 
     return -1;
 }
@@ -318,6 +324,20 @@ void writeHandler(const char *pin, String value, bool store) {
     AppBlynk::getData(variable, pin, value, store);
 }
 
+BLYNK_WRITE(V6) { // lightDayStart
+    writeHandler("lightDayStart", param.asInt(), true);
+};
+BLYNK_WRITE(V7) { // lightDayEnd
+    writeHandler("lightDayEnd", param.asInt(), true);
+};
+BLYNK_WRITE(V8) { // lightConnected
+    int value = param.asInt();
+    int &autoHeating = AppBlynk::getIntVariable("autoHeating");
+    if (value == 0 && autoHeating == 0) {
+        Heating::stop();
+    }
+    writeHandler("lightConnected", value, true);
+};
 BLYNK_WRITE(V20) { // otaHost
     writeHandler("otaHost", param.asStr(), true);
 };
